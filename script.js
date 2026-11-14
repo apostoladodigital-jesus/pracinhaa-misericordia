@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const player = videoFrame.parentElement;
   const source = video.querySelector('source');
   const placeholder = document.getElementById('videoPlaceholder');
+  const placeholderPlay = document.getElementById('placeholderPlay');
   const playbackFeedback = document.getElementById('playbackFeedback');
   const title = document.getElementById('videoTitle');
   const description = document.getElementById('videoDescription');
@@ -25,6 +26,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingSeek = 0;
   let isSeeking = false;
   let feedbackTimeout;
+
+  const setPlaceholderState = (state) => {
+    const loading = state === 'loading';
+    const error = state === 'error';
+    placeholder.classList.toggle('loading', loading);
+    placeholder.classList.toggle('error', error);
+    placeholder.classList.toggle('hidden', state === 'hidden');
+
+    const messages = {
+      ready: ['Uma mensagem para você', 'Toque para iniciar o vídeo.'],
+      loading: ['Preparando vídeo...', 'A reprodução começará em instantes.'],
+      error: [
+        'Não foi possível carregar o vídeo',
+        `Confira se o arquivo ${videoSource.filename} está na pasta assets.`
+      ]
+    };
+    if (messages[state]) {
+      const [heading, descriptionText] = messages[state];
+      placeholder.querySelector('strong').textContent = heading;
+      placeholder.querySelector('.placeholder-description').textContent = descriptionText;
+    }
+  };
 
   const hidePlaybackFeedback = () => {
     window.clearTimeout(feedbackTimeout);
@@ -115,8 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (!video.paused) {
       video.pause();
     } else {
+      setPlaceholderState('loading');
       video.play().catch(() => {
         playerStatus.textContent = 'Não foi possível iniciar a reprodução.';
+        setPlaceholderState('ready');
       });
     }
   };
@@ -155,11 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     video.pause();
     playWhenReady = autoplay;
     pendingSeek = startAt;
-    if (showPlaceholder) {
-      placeholder.querySelector('strong').textContent = 'Carregando vídeo...';
-      placeholder.querySelector('span').textContent = 'A reprodução começa assim que o vídeo estiver pronto.';
-      placeholder.classList.remove('hidden');
-    }
+    setPlaceholderState(showPlaceholder ? 'ready' : 'hidden');
     video.preload = 'metadata';
     if (source.getAttribute('src') !== videoSource.src) {
       source.src = videoSource.src;
@@ -181,12 +202,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   video.addEventListener('canplay', () => {
-    placeholder.classList.add('hidden');
-    if (!playWhenReady) return;
+    if (!playWhenReady) {
+      if (video.paused) setPlaceholderState('ready');
+      return;
+    }
     playWhenReady = false;
     video.play().catch(() => {
       playerStatus.textContent = 'Toque em reproduzir para continuar o vídeo.';
+      setPlaceholderState('ready');
     });
+  });
+
+  video.addEventListener('playing', () => setPlaceholderState('hidden'));
+
+  video.addEventListener('waiting', () => {
+    if (!video.paused) setPlaceholderState('loading');
+  });
+
+  video.addEventListener('stalled', () => {
+    if (!video.paused) setPlaceholderState('loading');
   });
 
   video.addEventListener('play', () => {
@@ -212,19 +246,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   video.addEventListener('error', () => {
-    placeholder.querySelector('strong').textContent = 'Não foi possível carregar o vídeo';
-    placeholder.querySelector('span').textContent =
-      `Confira se o arquivo ${videoSource.filename} está na pasta assets.`;
-    placeholder.classList.remove('hidden');
+    setPlaceholderState('error');
     playerStatus.textContent = 'Não foi possível carregar o vídeo.';
     playWhenReady = false;
   });
 
+  placeholderPlay.addEventListener('click', togglePlayback);
   playToggle.addEventListener('click', togglePlayback);
   fullscreenToggle.addEventListener('click', toggleFullscreen);
 
   videoFrame.addEventListener('click', (event) => {
-    if (event.target.closest('.video-controls')) return;
+    if (event.target.closest('.video-controls, .placeholder-play')) return;
     togglePlayback();
   });
 
