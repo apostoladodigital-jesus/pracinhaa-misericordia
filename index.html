@@ -28,9 +28,13 @@
       <p class="intro-motto">Evangelizar para Transformar</p>
     </section>
 
-    <section class="video-section" id="videoSection" aria-label="Vídeo institucional">
+    <section class="video-section" id="videoSection" aria-label="Vídeos da Aliança de Misericórdia">
+      <div class="video-message">
+        <h2>Uma mensagem especial para você</h2>
+       
+      </div>
       <div class="video-heading">
-        <span class="eyebrow">ALIANÇA DE MISERICÓRDIA</span>
+        <span class="eyebrow" id="videoTitle">ALIANÇA DE MISERICORDIA</span>
         <span class="heading-line"></span>
       </div>
       <div class="phone-shell">
@@ -38,19 +42,49 @@
         <div class="phone-button phone-button-power" aria-hidden="true"></div>
         <div class="phone-speaker" aria-hidden="true"><span></span></div>
         <div class="video-frame">
-          <video id="mainVideo" controls playsinline preload="none">
-            <source data-src="assets/VID-20261110-WA0062.mp4" type="video/mp4">
+          <video
+            id="mainVideo"
+            playsinline
+            preload="metadata"
+            tabindex="0"
+            aria-label="Vídeo da mensagem especial"
+            aria-keyshortcuts="Space K ArrowLeft ArrowRight M F Escape"
+          >
+            <source src="assets/mensagem_unificada_otimizada.mp4" type="video/mp4">
           </video>
           <div class="video-placeholder" id="videoPlaceholder">
-            <div class="placeholder-icon">▶</div>
-            <strong>Preparando o vídeo</strong>
-            <span>O carregamento começa assim que a abertura terminar.</span>
+            <div class="placeholder-icon loading-spinner" aria-hidden="true"></div>
+            <strong>Carregando vídeo...</strong>
+            <span>A reprodução começa assim que o vídeo estiver pronto.</span>
+          </div>
+          <div class="playback-feedback" id="playbackFeedback" aria-hidden="true"></div>
+          <div class="video-controls" aria-label="Controles do vídeo">
+            <button class="play-toggle" id="playToggle" type="button" aria-label="Reproduzir">
+              <span id="playIcon" aria-hidden="true">▶</span>
+            </button>
+            <span class="video-time" id="currentTime">0:00</span>
+            <input
+              class="video-timeline"
+              id="videoTimeline"
+              type="range"
+              min="0"
+              max="0"
+              value="0"
+              step="0.1"
+              aria-label="Posição na reprodução do vídeo"
+              disabled
+            >
+            <span class="video-time" id="totalTime">0:00</span>
+            <button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-label="Ativar tela cheia" title="Tela cheia">
+              <span aria-hidden="true">⛶</span>
+            </button>
+            <span class="player-status" id="playerStatus" aria-live="polite"></span>
           </div>
         </div>
       </div>
       <div class="video-footer">
-        <span>Um sinal de misericórdia em um mundo que clama por misericórdia.</span>
-        <span class="footer-symbol" aria-hidden="true">✦</span>
+        <span id="videoDescription">Ser sinal de misericórdia em um mundo que clama por misericórdia.</span>
+       
       </div>
     </section>
 

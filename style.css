@@ -23,8 +23,11 @@ body {
 .page {
   min-height: 100svh;
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
   padding: 52px 6vw;
   isolation: isolate;
   overflow: hidden;
@@ -145,6 +148,22 @@ body {
   transform: translateY(18px);
   animation: content-enter 1s cubic-bezier(.2,.7,.2,1) 4.45s forwards;
 }
+.video-message {
+  max-width: 380px;
+  margin: 0 0 24px;
+  text-align: center;
+}
+.video-message h2 {
+  margin: 0;
+  color: var(--wine-dark);
+  font: 500 clamp(25px, 4vw, 34px)/1.15 'Playfair Display', Georgia, serif;
+}
+.video-message p {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
 .video-heading {
   display: flex;
   align-items: center;
@@ -248,6 +267,30 @@ video {
   transition: opacity .3s ease;
 }
 .video-placeholder.hidden { opacity: 0; pointer-events: none; }
+.playback-feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  padding-left: 4px;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 50%;
+  background: rgba(0,0,0,.48);
+  color: #fff;
+  font-size: 25px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(.8);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.playback-feedback.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
 .placeholder-icon {
   width: 48px; height: 48px;
   display: grid; place-items: center;
@@ -258,6 +301,12 @@ video {
   font-size: 15px;
   margin-bottom: 8px;
 }
+.loading-spinner {
+  border: 3px solid rgba(255,255,255,.25);
+  border-top-color: #fff;
+  animation: video-loading-spin .8s linear infinite;
+}
+@keyframes video-loading-spin { to { transform: rotate(360deg); } }
 .video-placeholder strong {
   font: 500 24px 'Playfair Display', Georgia, serif;
 }
@@ -267,6 +316,95 @@ video {
   background: rgba(255,255,255,.12);
   padding: 2px 5px;
   border-radius: 3px;
+}
+.video-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 15px 12px 10px;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0,0,0,.82));
+}
+.play-toggle {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.play-toggle:focus-visible,
+.fullscreen-toggle:focus-visible,
+.video-timeline:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.fullscreen-toggle {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+.fullscreen-toggle span { display: block; transform: translateY(-1px); }
+.video-time {
+  flex: 0 0 auto;
+  color: rgba(255,255,255,.92);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.video-timeline {
+  flex: 1;
+  min-width: 20px;
+  height: 4px;
+  margin: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    #fff var(--timeline-progress, 0%),
+    rgba(255,255,255,.45) var(--timeline-progress, 0%)
+  );
+  cursor: pointer;
+}
+.video-timeline::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  appearance: none;
+  background: #fff;
+}
+.video-timeline::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}
+.video-timeline:disabled { cursor: default; opacity: .5; }
+.player-status {
+  position: absolute;
+  right: 12px;
+  bottom: 56px;
+  left: 12px;
+  color: #fff;
+  font-size: 10px;
+  text-shadow: 0 1px 3px #000;
 }
 .video-footer {
   display: flex;
@@ -280,6 +418,88 @@ video {
   line-height: 1.6;
 }
 .footer-symbol { flex: 0 0 auto; color: var(--brass); font-size: 17px; }
+.phone-shell:fullscreen,
+.phone-shell:-webkit-full-screen {
+  display: grid;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+}
+.phone-shell:fullscreen::before,
+.phone-shell:-webkit-full-screen::before,
+.phone-shell:fullscreen .phone-speaker,
+.phone-shell:-webkit-full-screen .phone-speaker,
+.phone-shell:fullscreen .phone-button,
+.phone-shell:-webkit-full-screen .phone-button { display: none; }
+.phone-shell:fullscreen .video-frame,
+.phone-shell:-webkit-full-screen .video-frame {
+  width: min(100vw, 56.25vh);
+  height: min(100vh, 177.78vw);
+  height: min(100dvh, 177.78vw);
+  aspect-ratio: 9 / 16;
+  border-radius: 0;
+}
+html.player-fullscreen,
+html.player-fullscreen body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+html.player-fullscreen .page {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  padding: 0;
+  overflow: visible;
+  gap: 0;
+}
+html.player-fullscreen .page > :not(.video-section) {
+  display: none;
+}
+html.player-fullscreen .video-section {
+  position: static;
+  width: 0;
+  height: 0;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+html.player-fullscreen .video-section > :not(.phone-shell) {
+  display: none;
+}
+html.player-fullscreen .phone-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+}
+html.player-fullscreen .phone-shell::before,
+html.player-fullscreen .phone-shell .phone-speaker,
+html.player-fullscreen .phone-shell .phone-button {
+  display: none;
+}
+html.player-fullscreen .phone-shell .video-frame {
+  width: min(100vw, 56.25vh);
+  height: min(100vh, 177.78vw);
+  height: min(100dvh, 177.78vw);
+  aspect-ratio: 9 / 16;
+  border-radius: 0;
+}
 .page-signature {
   position: absolute;
   bottom: 27px;
@@ -316,6 +536,8 @@ video {
   .intro-verse cite { margin-top: 7px; font-size: 9px; }
   .intro-motto { margin-top: 11px; font-size: clamp(18px, 5vw, 23px); }
   .video-heading { gap: 12px; margin-bottom: 13px; }
+  .video-message { margin-bottom: 20px; }
+  .video-message p { font-size: 12px; }
   .eyebrow { font-size: 8px; letter-spacing: .15em; }
   .phone-shell {
     width: min(340px, 100%, calc((100svh - 190px) * 9 / 16));

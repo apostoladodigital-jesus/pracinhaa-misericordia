@@ -16,5 +16,6 @@ O arquivo `index.html` deve permanecer na raiz do repositório. Se ele estiver d
 
 - `index.html`: estrutura e conteúdo.
 - `style.css`: estilos e layout responsivo.
-- `script.js`: comportamento do player e carregamento adiado do vídeo.
-- `assets/`: vídeo institucional e logo.
+- `script.js`: carregamento adiado, reprodução do vídeo unificado e controles.
+- `assets/mensagem_unificada_otimizada.mp4`: os dois vídeos unidos em um único arquivo comprimido para carregamento mais rápido.
+- `assets/`: vídeos originais e logo.
