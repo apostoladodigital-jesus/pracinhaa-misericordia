@@ -153,6 +153,16 @@ body {
   transform: translateY(18px);
   animation: content-enter 1s cubic-bezier(.2,.7,.2,1) 4.45s forwards;
 }
+.video-section.video-section-visible {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+html.fullscreen-active .video-section {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
 .video-message {
   max-width: 380px;
   margin: 0 0 24px;
@@ -492,11 +502,14 @@ video {
 .phone-shell:fullscreen .phone-button,
 .phone-shell:-webkit-full-screen .phone-button { display: none; }
 .phone-shell:fullscreen .video-frame,
-.phone-shell:-webkit-full-screen .video-frame {
-  width: min(100vw, 56.25vh);
-  height: min(100vh, 177.78vw);
-  height: min(100dvh, 177.78vw);
-  aspect-ratio: 9 / 16;
+.phone-shell:-webkit-full-screen .video-frame,
+html.player-fullscreen .phone-shell .video-frame {
+  width: min(100vw, calc(100vh * var(--video-ratio, .5625)));
+  width: min(100vw, calc(100dvh * var(--video-ratio, .5625)));
+  height: auto;
+  max-width: 100vw;
+  max-height: 100vh;
+  max-height: 100dvh;
   border-radius: 0;
 }
 html.player-fullscreen,
@@ -546,13 +559,6 @@ html.player-fullscreen .phone-shell::before,
 html.player-fullscreen .phone-shell .phone-speaker,
 html.player-fullscreen .phone-shell .phone-button {
   display: none;
-}
-html.player-fullscreen .phone-shell .video-frame {
-  width: min(100vw, 56.25vh);
-  height: min(100vh, 177.78vw);
-  height: min(100dvh, 177.78vw);
-  aspect-ratio: 9 / 16;
-  border-radius: 0;
 }
 .page-signature {
   position: absolute;

@@ -1,7 +1,7 @@
 // Controla a apresentação do vídeo e a mensagem em caso de falha no carregamento.
 document.addEventListener('DOMContentLoaded', () => {
   const intro = document.getElementById('intro');
-  const introDismissedKey = 'alianca-intro-dismissed';
+  const videoSection = document.getElementById('videoSection');
   const video = document.getElementById('mainVideo');
   const videoFrame = video.parentElement;
   const player = videoFrame.parentElement;
@@ -28,19 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingSeek = 0;
   let isSeeking = false;
   let feedbackTimeout;
-  let wasFullscreen = false;
+  let fullscreenRequestPending = false;
 
-  if (sessionStorage.getItem(introDismissedKey) === 'true') {
-    intro.classList.add('intro-dismissed');
-  }
-
-  const dismissIntro = () => {
-    intro.classList.add('intro-dismissed');
-    sessionStorage.setItem(introDismissedKey, 'true');
-  };
+  const dismissIntro = () => intro.classList.add('intro-dismissed');
+  const revealVideoSection = () => videoSection.classList.add('video-section-visible');
 
   intro.addEventListener('animationend', (event) => {
     if (event.animationName === 'intro-exit') dismissIntro();
+  });
+  videoSection.addEventListener('animationend', (event) => {
+    if (event.animationName === 'content-enter') revealVideoSection();
   });
 
   const setPlaceholderState = (state) => {
@@ -95,17 +92,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getElapsedTime = () => video.currentTime || 0;
 
+  const getFullscreenElement = () =>
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement;
+
   const isFullscreen = () =>
-    document.fullscreenElement === player ||
-    document.webkitFullscreenElement === player ||
+    getFullscreenElement() === player ||
+    video.webkitDisplayingFullscreen === true ||
     document.documentElement.classList.contains('player-fullscreen');
 
   const updateFullscreenButton = () => {
     const active = isFullscreen();
-    if (active || wasFullscreen) dismissIntro();
-    wasFullscreen = active;
+    document.documentElement.classList.toggle('fullscreen-active', active);
+    if (active) dismissIntro();
     fullscreenToggle.setAttribute('aria-label', active ? 'Sair da tela cheia' : 'Ativar tela cheia');
     fullscreenToggle.title = active ? 'Sair da tela cheia' : 'Tela cheia';
+  };
+
+  const enterCssFullscreen = () => {
+    fullscreenRequestPending = false;
+    document.documentElement.classList.add('player-fullscreen');
+    updateFullscreenButton();
+  };
+
+  const exitNativeFullscreen = () => {
+    const exitFullscreen =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen;
+    if (!exitFullscreen) return false;
+    Promise.resolve(exitFullscreen.call(document))
+      .then(updateFullscreenButton)
+      .catch(() => {
+        playerStatus.textContent = 'Não foi possível sair da tela cheia.';
+      });
+    return true;
   };
 
   const updateTimeline = (time = getElapsedTime()) => {
@@ -165,30 +189,47 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const toggleFullscreen = () => {
-    if (isFullscreen()) {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        Promise.resolve(document.exitFullscreen.call(document))
-          .then(updateFullscreenButton)
-          .catch(() => {
-            playerStatus.textContent = 'Não foi possível sair da tela cheia.';
-          });
-      } else {
-        document.documentElement.classList.remove('player-fullscreen');
-        updateFullscreenButton();
-      }
+    dismissIntro();
+    revealVideoSection();
+    const fullscreenElement = getFullscreenElement();
+    if (document.documentElement.classList.contains('player-fullscreen')) {
+      document.documentElement.classList.remove('player-fullscreen');
+      updateFullscreenButton();
       return;
     }
 
-    const requestFullscreen = player.requestFullscreen || player.webkitRequestFullscreen;
+    if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
+      video.webkitExitFullscreen();
+      return;
+    }
+    if (fullscreenElement) {
+      exitNativeFullscreen();
+      return;
+    }
+
+    const requestFullscreen =
+      player.requestFullscreen ||
+      player.webkitRequestFullscreen ||
+      player.mozRequestFullScreen ||
+      player.msRequestFullscreen;
     if (requestFullscreen) {
+      fullscreenRequestPending = true;
       Promise.resolve(requestFullscreen.call(player))
-        .then(updateFullscreenButton)
+        .then(() => {
+          fullscreenRequestPending = false;
+          updateFullscreenButton();
+        })
         .catch(() => {
-          playerStatus.textContent = 'Não foi possível ativar a tela cheia.';
+          enterCssFullscreen();
         });
+    } else if (video.webkitEnterFullscreen) {
+      try {
+        video.webkitEnterFullscreen();
+      } catch (error) {
+        enterCssFullscreen();
+      }
     } else {
-      document.documentElement.classList.add('player-fullscreen');
-      updateFullscreenButton();
+      enterCssFullscreen();
     }
   };
 
@@ -212,6 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   video.addEventListener('loadedmetadata', () => {
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      videoFrame.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+      videoFrame.style.setProperty('--video-ratio', String(video.videoWidth / video.videoHeight));
+    }
     if (pendingSeek > 0) {
       video.currentTime = Math.min(pendingSeek, video.duration);
       pendingSeek = 0;
@@ -287,7 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const target = event.target;
-    if (target instanceof Element && target.closest('input:not([type="range"]), select, textarea, [contenteditable="true"]')) return;
+    if (
+      target instanceof Element &&
+      target.closest('button, input, select, textarea, a[href], [contenteditable="true"]')
+    ) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
 
     switch (event.key.toLowerCase()) {
@@ -315,15 +363,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.addEventListener('fullscreenchange', updateFullscreenButton);
-  document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+  const handleFullscreenChange = () => {
+    if (!getFullscreenElement()) {
+      document.documentElement.classList.remove('player-fullscreen');
+    }
+    updateFullscreenButton();
+  };
+  const handleFullscreenError = () => {
+    if (fullscreenRequestPending) enterCssFullscreen();
+  };
+
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+  player.addEventListener('fullscreenerror', handleFullscreenError);
+  player.addEventListener('webkitfullscreenerror', handleFullscreenError);
+  player.addEventListener('mozfullscreenerror', handleFullscreenError);
+  player.addEventListener('MSFullscreenError', handleFullscreenError);
   video.addEventListener('webkitbeginfullscreen', () => {
     dismissIntro();
     updateFullscreenButton();
   });
   video.addEventListener('webkitendfullscreen', () => {
-    dismissIntro();
-    updateFullscreenButton();
+    handleFullscreenChange();
   });
 
   timeline.addEventListener('input', () => {
