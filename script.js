@@ -1,5 +1,6 @@
 // Controla a apresentação do vídeo e a mensagem em caso de falha no carregamento.
 document.addEventListener('DOMContentLoaded', () => {
+  const intro = document.getElementById('intro');
   const video = document.getElementById('mainVideo');
   const videoFrame = video.parentElement;
   const player = videoFrame.parentElement;
@@ -26,6 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingSeek = 0;
   let isSeeking = false;
   let feedbackTimeout;
+  let wasFullscreen = false;
+
+  const dismissIntro = () => intro.classList.add('intro-dismissed');
+
+  intro.addEventListener('animationend', (event) => {
+    if (event.animationName === 'intro-exit') dismissIntro();
+  });
 
   const setPlaceholderState = (state) => {
     const loading = state === 'loading';
@@ -86,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateFullscreenButton = () => {
     const active = isFullscreen();
+    if (wasFullscreen && !active) dismissIntro();
+    wasFullscreen = active;
     fullscreenToggle.setAttribute('aria-label', active ? 'Sair da tela cheia' : 'Ativar tela cheia');
     fullscreenToggle.title = active ? 'Sair da tela cheia' : 'Tela cheia';
   };
@@ -300,7 +310,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('fullscreenchange', updateFullscreenButton);
   document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
   video.addEventListener('webkitbeginfullscreen', updateFullscreenButton);
-  video.addEventListener('webkitendfullscreen', updateFullscreenButton);
+  video.addEventListener('webkitendfullscreen', () => {
+    dismissIntro();
+    updateFullscreenButton();
+  });
 
   timeline.addEventListener('input', () => {
     isSeeking = true;

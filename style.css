@@ -73,6 +73,11 @@ body {
   background: var(--paper);
   animation: intro-exit 1s ease 4.1s forwards;
 }
+.intro.intro-dismissed {
+  visibility: hidden;
+  pointer-events: none;
+  animation: none;
+}
 .intro-logo {
   display: block;
   width: min(144px, 30vw);
